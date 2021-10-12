@@ -1,8 +1,7 @@
 #![no_main]
 #![no_std]
 
-#[allow(unused_imports)]
-use aux7::{entry, iprint, iprintln};
+use aux7::entry;
 
 #[entry]
 fn main() -> ! {
