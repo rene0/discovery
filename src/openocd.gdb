@@ -2,7 +2,7 @@
 target remote :3333
 
 # Load will flash the code
-load
+#load
 
 # Enable demangling asm names on disassembly
 set print asm-demangle on
@@ -11,7 +11,7 @@ set print asm-demangle on
 set print pretty on
 
 # Disable style sources as the default colors can be hard to read
-set style sources off
+#set style sources off
 
 # Initialize monitoring so iprintln! macro output
 # is sent from the itm port to itm.txt
