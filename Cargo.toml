@@ -3,6 +3,7 @@ members = [
   "src/05-led-roulette",
   "src/06-hello-world",
   "src/07-registers",
+  "src/07-5-type-safe-manipulation",
   "src/08-leds-again",
   "src/09-clocks-and-timers",
   "src/11-usart",
