@@ -5,7 +5,8 @@ use aux9::{entry, switch_hal::OutputSwitch, tim6};
 
 #[inline(never)]
 fn delay(tim6: &tim6::RegisterBlock, ms: u16) {
-    // TODO implement this
+    // first attempt, constant delay, ~2 rounds per second
+    // for _ in 0..ms*32 { } // multiplying by 32 gives approx 5 cycles in 4 seconds with ms=50
 }
 
 #[entry]
