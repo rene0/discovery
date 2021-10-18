@@ -5,12 +5,14 @@ use aux9::{entry, switch_hal::OutputSwitch, tim6};
 
 #[inline(never)]
 fn delay(tim6: &tim6::RegisterBlock, ms: u16) {
-    // first attempt, constant delay, ~2 rounds per second
-    // const K: u16 = 32; // this value needs to be tweaked
-    // for _ in 0..ms*32 { } // multiplying by 32 gives approx 5 cycles in 4 seconds with ms=50
-    // for _ in 0..(K * ms) {
-    //    aux9::nop()
-    //}
+    // set timer to go off in `ms` ticks (= ms)
+    tim6.arr.write(|w| w.arr().bits(ms));
+    // CEN: enable timer
+    tim6.cr1.modify(|_, w| w.cen().set_bit());
+    // wait until alarm goes off
+    while !tim6.sr.read().uif().bit_is_set() {}
+    // reset update event flag for next delay() call
+    tim6.sr.modify(|_, w| w.uif().clear_bit());
 }
 
 #[entry]
@@ -18,7 +20,16 @@ fn main() -> ! {
     let (leds, rcc, tim6) = aux9::init();
     let mut leds = leds.into_array();
 
-    // TODO initialize TIM6
+    // initialize TIM6
+    // power on TIM6
+    rcc.apb1enr.modify(|_, w| w.tim6en().set_bit());
+    // let TIM6 operate in one-pulse mode
+    // OPM: select one-pulse mode
+    // CEN: keep counter disabled for now
+    tim6.cr1.write(|w| w.opm().set_bit().cen().clear_bit());
+    // configure pre-scalar to have counter operate at 1 kHz
+    tim6.psc.write(|w| w.psc().bits(/* psc */ 7999));
+    // abp1 = 8M, counterfreq=abp/(psc+1) -> psc+1=8M/1k so psc+1=8000
 
     let ms = 50;
     loop {
