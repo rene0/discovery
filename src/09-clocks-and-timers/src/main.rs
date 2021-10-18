@@ -6,7 +6,11 @@ use aux9::{entry, switch_hal::OutputSwitch, tim6};
 #[inline(never)]
 fn delay(tim6: &tim6::RegisterBlock, ms: u16) {
     // first attempt, constant delay, ~2 rounds per second
+    // const K: u16 = 32; // this value needs to be tweaked
     // for _ in 0..ms*32 { } // multiplying by 32 gives approx 5 cycles in 4 seconds with ms=50
+    // for _ in 0..(K * ms) {
+    //    aux9::nop()
+    //}
 }
 
 #[entry]
