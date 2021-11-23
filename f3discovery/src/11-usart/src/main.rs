@@ -1,12 +1,12 @@
-#![deny(unsafe_code)]
+//#![deny(unsafe_code)]
 #![no_main]
 #![no_std]
+//#[allow(unused_imports)]
+//use core::fmt::{self, Write};
+use aux11::{entry, iprintln};
+use heapless::Vec;
 
-use core::fmt::{self, Write};
-
-#[allow(unused_imports)]
-use aux11::{entry, iprint, iprintln};
-
+/*
 macro_rules! uprint {
     ($serial:expr, $($arg:tt)*) => {
         $serial.write_fmt(format_args!($($arg)*)).ok()
@@ -21,7 +21,6 @@ macro_rules! uprintln {
         uprint!($serial, concat!($fmt, "\n"), $($arg)*)
     };
 }
-/*
 struct SerialPort {
     usart1: &'static mut usart1::RegisterBlock,
 }
@@ -37,9 +36,11 @@ impl fmt::Write for SerialPort {
 */
 #[entry]
 fn main() -> ! {
-    let (usart1, mono_timer, mut itm) = aux11::init();
-    //let mut serial = SerialPort { usart1 };
+    let (usart1, _ /*mono_timer*/, mut itm) = aux11::init();
+    let mut buffer: Vec<u8, 32> = Vec::new();
+
     /*
+    let mut serial = SerialPort { usart1 };
     let instant = mono_timer.now();
     uprintln!(serial, "The answer is {}", 40 + 2);
 
@@ -51,13 +52,29 @@ fn main() -> ! {
         elapsed as f32 / mono_timer.frequency().0 as f32 * 1e6
     );
     */
+    buffer.clear();
     loop {
         // Wait until there is data available
         while usart1.isr.read().rxne().bit_is_clear() {}
-
         // Retrieve the data
-        let _byte = usart1.rdr.read().rdr().bits() as u8;
-        //uprint!(serial, "{}", _byte as char);
-        usart1.tdr.write(|w| w.tdr().bits(u16::from(_byte)));
+        let inbyte = usart1.rdr.read().rdr().bits() as u8;
+        if inbyte == 0x0A || inbyte == 0x0D {
+            // send back reversed string
+            while let Some(b) = buffer.pop() {
+                while usart1.isr.read().txe().bit_is_clear() {} // prevent missing output due to buffer overflows
+                usart1.tdr.write(|w| w.tdr().bits(u16::from(b)));
+            }
+            while usart1.isr.read().txe().bit_is_clear() {} // prevent missing output due to buffer overflows
+            usart1.tdr.write(|w| w.tdr().bits(0x0D));
+            while usart1.isr.read().txe().bit_is_clear() {} // prevent missing output due to buffer overflows
+            usart1.tdr.write(|w| w.tdr().bits(0x0A));
+        } else if let Err(e) = buffer.push(inbyte) {
+            iprintln!(
+                &mut itm.stim[0],
+                "Failed to push '{}' to buffer: {}",
+                inbyte,
+                e
+            );
+        }
     }
 }
