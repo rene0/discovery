@@ -5,7 +5,7 @@
 use core::fmt::{self, Write};
 
 #[allow(unused_imports)]
-use aux11::{entry, iprint, iprintln, usart1};
+use aux11::{entry, iprint, iprintln};
 
 macro_rules! uprint {
     ($serial:expr, $($arg:tt)*) => {
@@ -21,7 +21,7 @@ macro_rules! uprintln {
         uprint!($serial, concat!($fmt, "\n"), $($arg)*)
     };
 }
-
+/*
 struct SerialPort {
     usart1: &'static mut usart1::RegisterBlock,
 }
@@ -34,12 +34,13 @@ impl fmt::Write for SerialPort {
         Ok(())
     }
 }
-
+*/
 #[entry]
 fn main() -> ! {
     let (usart1, mono_timer, mut itm) = aux11::init();
+    //let mut serial = SerialPort { usart1 };
+    /*
     let instant = mono_timer.now();
-    let mut serial = SerialPort { usart1 };
     uprintln!(serial, "The answer is {}", 40 + 2);
 
     let elapsed = instant.elapsed(); // in ticks
@@ -49,6 +50,14 @@ fn main() -> ! {
         elapsed,
         elapsed as f32 / mono_timer.frequency().0 as f32 * 1e6
     );
+    */
+    loop {
+        // Wait until there is data available
+        while usart1.isr.read().rxne().bit_is_clear() {}
 
-    loop {}
+        // Retrieve the data
+        let _byte = usart1.rdr.read().rdr().bits() as u8;
+        //uprint!(serial, "{}", _byte as char);
+        usart1.tdr.write(|w| w.tdr().bits(u16::from(_byte)));
+    }
 }
